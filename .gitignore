@@ -209,5 +209,5 @@ __marimo__/
 
 # Custom
 
-data/*
+data/simbrief_data.xml
 .env 
