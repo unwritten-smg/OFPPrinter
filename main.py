@@ -20,7 +20,7 @@ def main():
     gsb.downlaod_ofp(user_id)
     
     #Print file
-    stp.print_text_file(file_path)
+    stp.print_text_file("data/placeholder.txt", feed_lines=5, cut=True)
     
     
     

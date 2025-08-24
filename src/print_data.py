@@ -1,35 +1,35 @@
-import subprocess
-import sys
-import os
+import win32print
 
-def print_text_file(file_path):
-    """
-    Druckt eine Textdatei über Notepad auf einem POS-80 Drucker
-    
-    Args:
-        file_path (str): Pfad zur zu druckenden Textdatei
-        printer_name (str, optional): Name des Druckers (optional)
-    """
-    
-    # Prüfen ob die Datei existiert
-    if not os.path.exists(file_path):
-        print(f"Fehler: Datei '{file_path}' nicht gefunden!")
-        return False
-    
+def print_text_file(filename, printer_name=None, feed_lines=5, cut=True):
+    # If no printer specified, use default
+    if not printer_name:
+        printer_name = win32print.GetDefaultPrinter()
+    print("Printing to:", printer_name)
+
+    # Read the file as raw bytes
+    with open(filename, "rb") as f:
+        raw_data = f.read()
+
+    # Append feed + cut commands if enabled
+    if cut:
+        # Feed paper out a bit (ESC d n → feed n lines)
+        raw_data += b"\x1B\x64" + bytes([feed_lines])
+        # Full cut (GS V 0)
+        raw_data += b"\x1D\x56\x00"
+
+    # Open printer
+    hPrinter = win32print.OpenPrinter(printer_name)
     try:
-        # Notepad mit der Datei öffnen und direkt drucken
-        cmd = f'notepad.exe /p "{file_path}"'
-        # Befehl ausführen
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-        
-        if result.returncode == 0:
-            print(f"Datei '{file_path}' wurde erfolgreich gedruckt.")
-            return True
-        else:
-            print(f"Fehler beim Drucken: {result.stderr}")
-            return False
-            
-    except Exception as e:
-        print(f"Unerwarteter Fehler: {e}")
-        return False
-    
+        hJob = win32print.StartDocPrinter(hPrinter, 1, ("Raw File Print", None, "RAW"))
+        win32print.StartPagePrinter(hPrinter)
+
+        # Send file contents + cut commands to printer
+        win32print.WritePrinter(hPrinter, raw_data)
+
+        win32print.EndPagePrinter(hPrinter)
+        win32print.EndDocPrinter(hPrinter)
+    finally:
+        win32print.ClosePrinter(hPrinter)
+
+
+
